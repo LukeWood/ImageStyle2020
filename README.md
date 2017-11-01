@@ -10,10 +10,23 @@ keras_contrib (for InstanceNormalization)
 
 # Setup
 
-Download and extract http://msvocds.blob.core.windows.net/coco2014/train2014.zip (~13GB),
-into a directory called data so that the images are in 'data/train2014'.
+## Training data
+Any large image set can be used, we are using MSCOCO:  
+- http://msvocds.blob.core.windows.net/coco2014/train2014.zip (~13G)  
+- http://msvocds.blob.core.windows.net/coco2014/val2014.zip  (~6.6G)
+- http://msvocds.blob.core.windows.net/coco2014/test2014.zip (~6.6G)
+
 Because of the way Keras' ImageDataGenerator looks for images, the images need to be in a subdirectory
-of the directory passed as "train-path".
+of the directory passed as `train-path`, for example if `data` is passed as `train-path`:
+```
+data
+  -train2014
+    - 1.jpg
+    - 2.jpg
+    ...
+  -val2014
+  -test2014
+```
 
 # train.py 
 ```
