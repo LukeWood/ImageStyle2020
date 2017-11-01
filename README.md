@@ -36,6 +36,10 @@ python train.py --style wave.jpg --model-output wave.h5
   --content-weight CONTENT_WEIGHT   content weight (default 15.0)
   --style-weight STYLE_WEIGHT       style weight (default 100.0)
   --tv-weight TV_WEIGHT             total variation regularization weight (default 200.0)
+  --conv-filters CONV_FILTERS [CONV_FILTERS ...]
+                                    number of filters in conv layers in transform net
+  --num-resids NUM_RESIDS
+                                    number of residual blocks in transform net
 ```
 # evaluate.py 
 ```
@@ -49,4 +53,8 @@ python evaluate.py --model wave.h5 --input doge.jpg --output doge-wave.jpg
   --output OUTPUT                 output image path
   -p, --pad                       add reflection padding to input image
   -b. --border-size BORDER_SIZE   border size of reflection padding
+  --conv-filters CONV_FILTERS [CONV_FILTERS ...]
+                                    number of filters in conv layers in transform net
+  --num-resids NUM_RESIDS
+                                    number of residual blocks in transform net
 ```
