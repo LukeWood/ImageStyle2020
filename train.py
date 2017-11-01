@@ -7,8 +7,10 @@ TV_WEIGHT = 2e2
 BATCH_SIZE = 4
 NUM_EPOCHS = 2
 TRAIN_PATH = 'data'
-# num images in MSCOCO / 4 (default batch size)
-STEPS_PER_EPOCH = 20695
+
+# ~ num images in MSCOCO / 4 (default batch size)
+STEPS_PER_EPOCH = 41000
+
 CONV_FILTERS = [32, 64, 128]
 NUM_RESIDS = 5
 
