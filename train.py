@@ -9,6 +9,8 @@ NUM_EPOCHS = 2
 TRAIN_PATH = 'data'
 # num images in MSCOCO / 4 (default batch size)
 STEPS_PER_EPOCH = 20695
+CONV_FILTERS = [32, 64, 128]
+NUM_RESIDS = 5
 
 def build_parser():
     parser = ArgumentParser()
@@ -69,6 +71,16 @@ def build_parser():
                         dest='tv_weight',
                         help='total variation regularization weight (default %(default)s)',
                         metavar='TV_WEIGHT', default=TV_WEIGHT)
+
+    parser.add_argument('--conv-filters', type=int, nargs='+',
+                        dest='conv_filters',
+                        help='number of filters in conv layers in transform net',
+                        metavar='CONV_FILTERS', default=CONV_FILTERS)
+
+    parser.add_argument('--num-resids', type=int,
+                        dest='num_resids',
+                        help='number of residual blocks in transform net',
+                        metavar='NUM_RESIDS', default=NUM_RESIDS)
 
     return parser
 
@@ -156,7 +168,7 @@ style_img = image.load_img(options.style)
 style_target = image.img_to_array(style_img)
 
 inputs = Input(shape=(256, 256, 3))
-transform_net = TransformNet(inputs)
+transform_net = TransformNet(inputs, options.conv_filters, options.num_resids)
 model = Model(inputs=inputs, outputs=transform_net)
 loss_fn = create_loss_fn(style_target, options.content_weight,
                          options.style_weight, options.tv_weight,
