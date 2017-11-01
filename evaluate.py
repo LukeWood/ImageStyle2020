@@ -1,6 +1,9 @@
 from argparse import ArgumentParser
 import os
 
+CONV_FILTERS = [32, 64, 128]
+NUM_RESIDS = 5
+
 def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--model', type=str,
@@ -22,6 +25,17 @@ def build_parser():
     parser.add_argument('-b', '--border-size', type=str,
                         help='border size of reflection padding',
                         dest='border_size', default=30)
+
+    parser.add_argument('--conv-filters', type=int, nargs='+',
+                        dest='conv_filters',
+                        help='number of filters in conv layers in transform net',
+                        metavar='CONV_FILTERS', default=CONV_FILTERS)
+
+    parser.add_argument('--num-resids', type=int,
+                        dest='num_resids',
+                        help='number of residual blocks in transform net',
+                        metavar='NUM_RESIDS', default=NUM_RESIDS)
+
 
     return parser
 
@@ -64,7 +78,10 @@ input_img = np.expand_dims(input_img, axis=0)
 # Load model
 _, h, w, c = input_img.shape
 inputs = Input(shape=(h, w, c))
-transform_net = TransformNet(inputs)
+
+# TODO: determine conv_filters and num_resids from weights file?
+transform_net = TransformNet(inputs, options.conv_filters, options.num_resids)
+
 model = Model(inputs, transform_net)
 model.load_weights(options.model)
 
