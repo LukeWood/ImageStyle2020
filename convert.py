@@ -7,6 +7,9 @@ Instance Normalization)
 from argparse import ArgumentParser
 import os
 
+CONV_FILTERS = [32, 64, 128]
+NUM_RESIDS = 5
+
 def build_parser():
     parser = ArgumentParser()
 
@@ -22,6 +25,14 @@ def build_parser():
     parser.add_argument('--output', type=str,
                         dest='output', help='output path',
                         metavar='OUTPUT', required=True)
+    parser.add_argument('--conv-filters', type=int, nargs='+',
+                        dest='conv_filters',
+                        help='number of filters in conv layers in transform net',
+                        metavar='CONV_FILTERS', default=CONV_FILTERS)
+    parser.add_argument('--num-resids', type=int,
+                        dest='num_resids',
+                        help='number of residual blocks in transform net',
+                        metavar='NUM_RESIDS', default=NUM_RESIDS)
     return parser
 
 def check_opts(opts):
@@ -82,7 +93,7 @@ def convert_multiarray_output_to_image(spec, feature_name, is_bgr=False):
 
 
 inputs = Input(shape=(options.width, options.height, 3))
-transform_net = TransformNet(inputs)
+transform_net = TransformNet(inputs, options.conv_filters, options.num_resids)
 model = Model(inputs=inputs, outputs=transform_net)
 model.load_weights(options.model)
 
