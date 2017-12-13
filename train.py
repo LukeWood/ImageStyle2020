@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 import os
 
-CONTENT_WEIGHT = 1.5e1
-STYLE_WEIGHT = 1e2
+CONTENT_WEIGHT = 15.
+STYLE_WEIGHT = 100.
 TV_WEIGHT = 2e2
 BATCH_SIZE = 4
 NUM_EPOCHS = 2
