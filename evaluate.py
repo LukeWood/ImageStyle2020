@@ -18,10 +18,6 @@ def build_parser():
                         dest='output', help='output image path',
                         metavar='OUTPUT', required=True)
 
-    parser.add_argument('-p', '--pad',
-                        help='add reflection padding to input image',
-                        dest='pad', action='store_true')
-
     parser.add_argument('-b', '--border-size', type=str,
                         help='border size of reflection padding',
                         dest='border_size', default=30)
@@ -45,33 +41,21 @@ def check_opts(options):
     assert os.path.exists(options.input), "input path not found!"
 
 
-def pad(img, border_size):
-    return np.pad(img, ((border_size, border_size),
-                        (border_size, border_size),
-                        (0,0)), mode='reflect')
-
-
-def unpad(img, border_size):
-    return img[border_size: -border_size, border_size: -border_size]
-
-
 parser = build_parser()
 options = parser.parse_args()
 check_opts(options)
 
-from keras.layers import Input
+from keras.layers import Input, Cropping2D
 from keras.models import Model
 from keras.preprocessing import image
 import numpy as np
 from scipy.misc import imsave
 
-from transform import TransformNet
+from transform import TransformNet, ReflectionPadding2D
 
 # Get input image
 input_img = image.load_img(options.input)
 input_img = image.img_to_array(input_img)
-if options.pad:
-    input_img = pad(input_img, options.border_size)
 input_img = np.expand_dims(input_img, axis=0)
 
 
@@ -85,7 +69,11 @@ transform_net = TransformNet(inputs, options.conv_filters, options.num_resids)
 model = Model(inputs, transform_net)
 model.load_weights(options.model)
 
+# Set padding/cropping border in layers
+for layer in model.layers:
+    padding = int(options.border_size)
+    if isinstance(layer, ReflectionPadding2D) or isinstance(layer, Cropping2D):
+        layer.padding = ((padding, padding), (padding, padding))
+
 output_img = model.predict([input_img])[0]
-if options.pad:
-    output_img = unpad(output_img, options.border_size)
 imsave(options.output, output_img)
