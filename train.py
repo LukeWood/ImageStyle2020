@@ -1,5 +1,6 @@
 from loss import create_loss_fn
 import imageio
+from PIL import Image
 from skimage.transform import resize
 from transform import TransformNet
 import tensorflow as tf
@@ -13,6 +14,8 @@ import keras.backend as K
 from keras.models import Model
 from argparse import ArgumentParser
 import os
+
+tf.compat.v1.disable_eager_execution()
 
 CONTENT_WEIGHT = 15.
 STYLE_WEIGHT = 100.
@@ -104,7 +107,8 @@ def check_opts(opts):
         assert os.path.exists(opts.test), "test image not found!"
         assert os.path.exists(opts.test_dir), "test directory not found!"
     if opts.test:
-        assert options.test_dir != False, "test output dir must be given with test"
+        assert options.test_dir is not False, \
+            "test output dir must be given with test"
     if opts.model_input:
         assert os.path.exists(opts.model_input), "input model path not found!"
     assert opts.epochs > 0
@@ -133,7 +137,7 @@ def create_gen(img_dir, target_size, batch_size):
             # X will go through TransformNet,
             # y will go through VGG
             yield (img/255., img)
-
+        print("Done generating tuples")
     return tuple_gen()
 
 
@@ -145,8 +149,8 @@ K.set_learning_phase(1)
 
 class OutputPreview(Callback):
     def __init__(self, test_img_path, increment, preview_dir_path):
-        test_img = image.load_img(test_img_path)
-        test_img = resize(test_img, (256, 256, 3))
+        test_img = np.array(image.load_img(test_img_path))
+        test_img = np.array(Image.fromarray(test_img).resize((256, 256)))
         test_target = image.img_to_array(test_img)
         test_target = np.expand_dims(test_target, axis=0)
         self.test_img = test_target
@@ -187,9 +191,12 @@ if options.steps_per_epoch is None:
     options.steps_per_epoch = 25
 
 callbacks = None
+
 if options.test:
     callbacks = [OutputPreview(options.test, options.test_increment,
                                options.test_dir)]
-model.fit_generator(gen, steps_per_epoch=options.steps_per_epoch,
-                    epochs=options.epochs, callbacks=callbacks)
+
+print("beginning to fit model")
+model.fit(gen, verbose=True, steps_per_epoch=options.steps_per_epoch,
+          epochs=options.epochs, callbacks=callbacks)
 model.save(options.model_output)
