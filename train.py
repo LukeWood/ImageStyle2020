@@ -2,16 +2,13 @@ from loss import create_loss_fn
 import imageio
 from PIL import Image
 from util import count_num_samples
-from skimage.transform import resize
 from transform import TransformNet
 import tensorflow as tf
-import pandas as pd
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import image
 from keras.layers import Input
 from keras.callbacks import Callback
-import keras.backend as K
 from keras.models import Model
 from argparse import ArgumentParser
 import os
@@ -34,6 +31,10 @@ def build_parser():
                         dest='style', help='style image path',
                         metavar='STYLE', required=True)
 
+    parser.add_argument('--load-model-from', type=str, dest='load_model_from',
+                        help='checkpoint to load model from',
+                        metavar='LOAD_MODEL_FROM', required=False, default=False)
+
     parser.add_argument('--model-output', type=str,
                         dest='model_output', help='model output path',
                         metavar='MODEL_OUTPUT', required=True)
@@ -42,6 +43,14 @@ def build_parser():
                         dest='model_input',
                         help='path to model to train (if continuing training)',
                         metavar='MODEL_INPUT', required=False)
+
+    parser.add_argument('--checkpoint', type=str,
+                        dest='checkpoint', help='checkpoint directory',
+                        metavar='CHECKPOINT', default=False)
+
+    parser.add_argument('--checkpoint-freq', type=int, dest='checkpoint_freq',
+                        help='# of batches to checkpoint after',
+                        default='100', metavar='CHECKPOINT_FREQ', required=False)
 
     parser.add_argument('--test', type=str,
                         dest='test', help='test image path',
@@ -108,7 +117,7 @@ def check_opts(opts):
         assert os.path.exists(opts.test), "test image not found!"
         assert os.path.exists(opts.test_dir), "test directory not found!"
     if opts.test:
-        assert options.test_dir is not False, \
+        assert options.test_dir is not False,\
             "test output dir must be given with test"
     if opts.model_input:
         assert os.path.exists(opts.model_input), "input model path not found!"
@@ -140,12 +149,6 @@ def create_gen(img_dir, target_size, batch_size):
             yield (img/255., img)
         print("Done generating tuples")
     return tuple_gen()
-
-
-# Needed so that certain layers function in training mode
-K.set_learning_phase(1)
-
-# This needs to be in scope where model is defined
 
 
 class OutputPreview(Callback):
@@ -183,7 +186,9 @@ loss_fn = create_loss_fn(style_target, options.content_weight,
 model.compile(optimizer='adam', loss=loss_fn)
 
 if options.model_input:
-    model.load_weights(options.model_input)
+    model_2 = tf.keras.models.load_model(options.model_input, compile=False)
+    model.set_weights(model_2.get_weights())
+    print("Loaded model weights from", options.model_input)
 
 gen = create_gen(options.train_path, target_size=(256, 256),
                  batch_size=options.batch_size)
@@ -192,11 +197,17 @@ if options.steps_per_epoch is None:
     num_samples = count_num_samples(options.train_path)
     options.steps_per_epoch = num_samples // options.batch_size
 
-callbacks = None
+callbacks = []
 
 if options.test:
-    callbacks = [OutputPreview(options.test, options.test_increment,
-                               options.test_dir)]
+    print("Saving sample transformations to", options.test_dir)
+    callbacks.append(OutputPreview(options.test, options.test_increment,
+                                   options.test_dir))
+if options.checkpoint:
+    print("Checkpointing to", options.checkpoint)
+    callbacks.append(tf.keras.callbacks.ModelCheckpoint(
+        save_freq=options.checkpoint_freq,
+        filepath=options.checkpoint, monitor="loss", save_best_only=True))
 
 print("beginning to fit model")
 model.fit(gen, verbose=True, steps_per_epoch=options.steps_per_epoch,

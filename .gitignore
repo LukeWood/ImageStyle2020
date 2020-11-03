@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 data/
 .DS_Store
+checkpoint/
 
 # C extensions
 *.so
