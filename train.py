@@ -1,3 +1,16 @@
+from loss import create_loss_fn
+import imageio
+from skimage.transform import resize
+from transform import TransformNet
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing import image
+from keras.layers import Input
+from keras.callbacks import Callback
+import keras.backend as K
+from keras.models import Model
 from argparse import ArgumentParser
 import os
 
@@ -9,6 +22,7 @@ NUM_EPOCHS = 2
 TRAIN_PATH = 'data'
 CONV_FILTERS = [32, 64, 128]
 NUM_RESIDS = 5
+
 
 def build_parser():
     parser = ArgumentParser()
@@ -51,7 +65,7 @@ def build_parser():
 
     parser.add_argument('--steps-per-epoch', type=int,
                         dest='steps_per_epoch',
-                        help='number of batches of samples per epoch, ' + \
+                        help='number of batches of samples per epoch, ' +
                              '(should be # of samples / batch size)',
                         metavar='BATCH_SIZE', default=None)
 
@@ -105,22 +119,6 @@ options = parser.parse_args()
 check_opts(options)
 
 
-from keras.models import Model
-import keras.backend as K
-from keras.callbacks import Callback
-from keras.layers import Input
-from keras.preprocessing import image
-from keras.preprocessing.image import ImageDataGenerator
-from scipy.misc import imresize, imsave
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-
-from transform import TransformNet
-from loss import create_loss_fn
-from util import count_num_samples
-
-
 def create_gen(img_dir, target_size, batch_size):
     datagen = ImageDataGenerator()
     gen = datagen.flow_from_directory(img_dir, target_size=target_size,
@@ -143,10 +141,12 @@ def create_gen(img_dir, target_size, batch_size):
 K.set_learning_phase(1)
 
 # This needs to be in scope where model is defined
+
+
 class OutputPreview(Callback):
     def __init__(self, test_img_path, increment, preview_dir_path):
         test_img = image.load_img(test_img_path)
-        test_img = imresize(test_img, (256, 256, 3))
+        test_img = resize(test_img, (256, 256, 3))
         test_target = image.img_to_array(test_img)
         test_target = np.expand_dims(test_target, axis=0)
         self.test_img = test_target
@@ -161,7 +161,7 @@ class OutputPreview(Callback):
             output_img = model.predict(self.test_img)[0]
             fname = '%d.jpg' % self.iteration
             out_path = os.path.join(self.preview_dir_path, fname)
-            imsave(out_path, output_img)
+            imageio.imwrite(out_path, output_img)
 
         self.iteration += 1
 
@@ -184,8 +184,7 @@ gen = create_gen(options.train_path, target_size=(256, 256),
                  batch_size=options.batch_size)
 
 if options.steps_per_epoch is None:
-    num_samples = count_num_samples(options.train_path)
-    options.steps_per_epoch = num_samples // options.batch_size
+    options.steps_per_epoch = 25
 
 callbacks = None
 if options.test:
