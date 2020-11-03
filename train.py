@@ -167,7 +167,7 @@ class OutputPreview(Callback):
     def on_batch_end(self, batch, logs={}):
         if (self.iteration % self.increment == 0):
             output_img = model.predict(self.test_img)[0]
-            output_img = np.clip(output_img, 0, 255).astype(np.int8)
+            output_img = np.clip(output_img, 0, 255).astype(np.uint8)
             fname = '%d.jpg' % self.iteration
             out_path = os.path.join(self.preview_dir_path, fname)
             imageio.imwrite(out_path, output_img)
