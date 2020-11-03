@@ -1,6 +1,7 @@
 from loss import create_loss_fn
 import imageio
 from PIL import Image
+from util import count_num_samples
 from skimage.transform import resize
 from transform import TransformNet
 import tensorflow as tf
@@ -188,7 +189,8 @@ gen = create_gen(options.train_path, target_size=(256, 256),
                  batch_size=options.batch_size)
 
 if options.steps_per_epoch is None:
-    options.steps_per_epoch = 25
+    num_samples = count_num_samples(options.train_path)
+    options.steps_per_epoch = num_samples // options.batch_size
 
 callbacks = None
 
